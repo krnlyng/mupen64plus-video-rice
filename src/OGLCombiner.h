@@ -88,6 +88,7 @@ private:
         GLint tex0Loc;
         GLint tex1Loc;
         GLint fogColorLoc;
+        GLint rotation_matrix;
     } ShaderSaveType;
 
     void   genFragmentBlenderStr( char *newFrgStr );

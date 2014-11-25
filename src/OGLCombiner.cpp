@@ -63,6 +63,7 @@ static char newFrgStr[4092]; // The main buffer for store fragment shader string
 static const char *vertexShaderStr =
 "#version " GLSL_VERSION "\n"
 "uniform vec2 uFogMinMax;\n"
+"uniform mat4 rotation_matrix;\n"
 "\n"
 "attribute vec4 inPosition;\n"
 "attribute vec2 inTexCoord0;\n"
@@ -77,7 +78,7 @@ static const char *vertexShaderStr =
 "\n"
 "void main()\n"
 "{\n"
-"gl_Position = inPosition;\n"
+"gl_Position = rotation_matrix * inPosition;\n"
 "vertexTexCoord0 = inTexCoord0;\n"
 "vertexTexCoord1 = inTexCoord1;\n"
 "vertexFog = clamp((uFogMinMax[1] - inFog) / (uFogMinMax[1] - uFogMinMax[0]), 0.0, 1.0);\n"
@@ -247,6 +248,71 @@ static GLuint createProgram(const GLuint vShader, GLuint fShader)
     return program;
 }
 
+void set_rotation_matrix(GLuint loc, int rotate)
+{
+    GLfloat mat[16];
+
+    /* first setup everything which is the same everytime */
+    /* (X, X, 0, 0)
+     * (X, X, 0, 0)
+     * (0, 0, 1, 0)
+     * (0, 0, 0, 1)
+     */
+
+    //mat[0] =  cos(angle);
+    //mat[1] =  sin(angle);
+    mat[2] = 0;
+    mat[3] = 0;
+
+    //mat[4] = -sin(angle);
+    //mat[5] =  cos(angle);
+    mat[6] = 0;
+    mat[7] = 0;
+
+    mat[8] = 0;
+    mat[9] = 0;
+    mat[10] = 1;
+    mat[11] = 0;
+
+    mat[12] = 0;
+    mat[13] = 0;
+    mat[14] = 0;
+    mat[15] = 1;
+
+    /* now set the actual rotation */
+    if(1 == rotate) // 90 degree
+    {
+        mat[0] =  0;
+        mat[1] =  1;
+        mat[4] = -1;
+        mat[5] =  0;
+    }
+    else if(2 == rotate) // 180 degree
+    {
+        mat[0] = -1;
+        mat[1] =  0;
+        mat[4] =  0;
+        mat[5] =  -1;
+    }
+    else if(3 == rotate) // 270 degree
+    {
+        mat[0] =  0;
+        mat[1] = -1;
+        mat[4] =  1;
+        mat[5] =  0;
+    }
+    else /* 0 degree, also fallback if input is wrong) */
+    {
+        mat[0] =  1;
+        mat[1] =  0;
+        mat[4] =  0;
+        mat[5] =  1;
+    }
+
+    glUniformMatrix4fv(loc, 1, GL_FALSE, mat);
+}
+
+
 COGLColorCombiner::COGLColorCombiner(CRender *pRender) :
     CColorCombiner(pRender),
     m_pOGLRender((OGLRender*)pRender),
@@ -258,6 +324,12 @@ COGLColorCombiner::COGLColorCombiner(CRender *pRender) :
     GLuint frgShaderFill = createShader( GL_FRAGMENT_SHADER, fragmentFill );
     m_fillProgram  = createProgram(m_vtxShader, frgShaderFill);
     m_fillColorLoc = glGetUniformLocation(m_fillProgram,"uFillColor"); OPENGL_CHECK_ERRORS
+
+    GLint rotation_matrix_location = glGetUniformLocation(m_fillProgram, "rotation_matrix");
+    if(-1 != rotation_matrix_location)
+    {
+        set_rotation_matrix(rotation_matrix_location, options.rotate);
+    }
     glDeleteShader( frgShaderFill ); OPENGL_CHECK_ERRORS
 }
 
@@ -1379,6 +1451,7 @@ void COGLColorCombiner::StoreUniformLocations( ShaderSaveType &saveType )
     saveType.tex0Loc            = glGetUniformLocation( saveType.program, "uTex0"            );
     saveType.tex1Loc            = glGetUniformLocation( saveType.program, "uTex1"            );
     saveType.fogColorLoc        = glGetUniformLocation( saveType.program, "uFogColor"        );
+    saveType.rotation_matrix    = glGetUniformLocation( saveType.program, "rotation_matrix"  );
 }
 
 // Return a shader id that match the current state in the current compiled shader "database".
