@@ -87,6 +87,7 @@ public:
     void EndRendering(void);
 
     void glViewportWrapper(GLint x, GLint y, GLsizei width, GLsizei height, bool flag=true);
+    void glScissorWrapper(GLint x, GLint y, GLsizei width, GLsizei height);
     virtual void EnableTexUnit(int unitno, BOOL flag);
     virtual void SetTexWrapS(int unitno,GLuint flag);
     virtual void SetTexWrapT(int unitno,GLuint flag);

@@ -935,7 +935,7 @@ void OGLRender::UpdateScissor()
         uint32 height = (gRDP.scissor.right*gRDP.scissor.bottom)/width;
         glEnable(GL_SCISSOR_TEST);
         OPENGL_CHECK_ERRORS;
-        glScissor(0, int(height*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
+        glScissorWrapper(0, int(height*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
             int(width*windowSetting.fMultX), int(height*windowSetting.fMultY) );
         OPENGL_CHECK_ERRORS;
     }
@@ -956,13 +956,13 @@ void OGLRender::ApplyRDPScissor(bool force)
         uint32 height = (gRDP.scissor.right*gRDP.scissor.bottom)/width;
         glEnable(GL_SCISSOR_TEST);
         OPENGL_CHECK_ERRORS;
-        glScissor(0, int(height*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
+        glScissorWrapper(0, int(height*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
             int(width*windowSetting.fMultX), int(height*windowSetting.fMultY) );
         OPENGL_CHECK_ERRORS;
     }
     else
     {
-        glScissor(int(gRDP.scissor.left*windowSetting.fMultX), int((windowSetting.uViHeight-gRDP.scissor.bottom)*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
+        glScissorWrapper(int(gRDP.scissor.left*windowSetting.fMultX), int((windowSetting.uViHeight-gRDP.scissor.bottom)*windowSetting.fMultY+windowSetting.statusBarHeightToUse),
             int((gRDP.scissor.right-gRDP.scissor.left)*windowSetting.fMultX), int((gRDP.scissor.bottom-gRDP.scissor.top)*windowSetting.fMultY ));
         OPENGL_CHECK_ERRORS;
     }
@@ -976,7 +976,7 @@ void OGLRender::ApplyScissorWithClipRatio(bool force)
 
     glEnable(GL_SCISSOR_TEST);
     OPENGL_CHECK_ERRORS;
-    glScissor(windowSetting.clipping.left, int((windowSetting.uViHeight-gRSP.real_clip_scissor_bottom)*windowSetting.fMultY)+windowSetting.statusBarHeightToUse,
+    glScissorWrapper(windowSetting.clipping.left, int((windowSetting.uViHeight-gRSP.real_clip_scissor_bottom)*windowSetting.fMultY)+windowSetting.statusBarHeightToUse,
         windowSetting.clipping.width, windowSetting.clipping.height);
     OPENGL_CHECK_ERRORS;
 
@@ -1019,8 +1019,41 @@ void OGLRender::glViewportWrapper(GLint x, GLint y, GLsizei width, GLsizei heigh
         mflag=flag;
         glLoadIdentity();
         OPENGL_CHECK_ERRORS;
-        glViewport(x,y,width,height);
+        if(options.rotate == 3)
+        {
+            if(x == 0)
+            {
+                glViewport((float)y * ((float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight), 0, height * (float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight, width * (float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth);
+            }
+            else
+            {
+                glViewport((float)y * ((float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight), ((float)windowSetting.uDisplayWidth - width - (float)x) * ((float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth), height * (float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight, width * (float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth);
+            }
+        }
+        else // todo
+        {
+            glViewport(x,y,width,height);
+        }
         OPENGL_CHECK_ERRORS;
+    }
+}
+
+void OGLRender::glScissorWrapper(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+    if(options.rotate == 3)
+    {
+        if(x == 0)
+        {
+            glScissor((float)y * ((float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight), 0, height * (float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight, width * (float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth);
+        }
+        else
+        {
+            glScissor((float)y * ((float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight), ((float)windowSetting.uDisplayWidth - width - (float)x) * ((float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth), height * (float)windowSetting.uDisplayWidth / (float)windowSetting.uDisplayHeight, width * (float)windowSetting.uDisplayHeight / (float)windowSetting.uDisplayWidth);
+        }
+    }
+    else // todo
+    {
+        glScissor(x,y,width,height);
     }
 }
 
